@@ -1,17 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 220" width="900" height="220" role="img" aria-label="Touchline">
-  <rect width="900" height="220" fill="#F6F8F4"/>
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#12352A"/><stop offset="1" stop-color="#0A1C15"/></linearGradient>
-    <linearGradient id="lime" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#C6F24E"/><stop offset="1" stop-color="#9BE03A"/></linearGradient>
+    <linearGradient id="lime" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2E8B3E"/><stop offset="1" stop-color="#1B5E20"/></linearGradient>
   </defs>
-  <g transform="translate(10,10) scale(0.3906)">
-    <rect width="512" height="512" rx="116" fill="url(#bg)"/>
-    <rect x="232" y="150" width="48" height="230" rx="24" fill="#F4F8F1"/>
+  <g transform="translate(30,30) scale(0.3906)">
+    <rect x="232" y="150" width="48" height="230" rx="24" fill="#0A1C15"/>
     <rect x="116" y="150" width="280" height="48" rx="24" fill="url(#lime)"/>
-    <circle cx="352" cy="312" r="30" fill="#F4F8F1"/>
-    <path d="M352 292 l17 12 -7 20 h-20 l-7 -20 z" fill="#0A1C15" opacity="0.9"/>
+    <circle cx="352" cy="312" r="30" fill="#0A1C15"/>
+    <path d="M352 292 l17 12 -7 20 h-20 l-7 -20 z" fill="#F6F8F4" opacity="0.9"/>
   </g>
-  <text x="268" y="96" font-family="Outfit, 'Plus Jakarta Sans', Inter, Arial, sans-serif" font-weight="700" font-size="92" letter-spacing="-2" fill="#0A1C15">Touch</text>
-  <text x="530" y="96" font-family="Outfit, 'Plus Jakarta Sans', Inter, Arial, sans-serif" font-weight="700" font-size="92" letter-spacing="-2" fill="#2E8B3E">line</text>
-  <text x="268" y="158" font-family="Outfit, 'Plus Jakarta Sans', Inter, Arial, sans-serif" font-weight="500" font-size="20" letter-spacing="6" fill="#5F7468">TRAIN LIKE A PRO</text>
+  <text x="210" y="115" font-family="Outfit, Plus Jakarta Sans, Inter, Arial, sans-serif" font-weight="700" font-size="92" letter-spacing="-2" fill="#0A1C15">Touch<tspan fill="#2E8B3E">line</tspan></text>
+  <text x="214" y="155" font-family="Outfit, Plus Jakarta Sans, Inter, Arial, sans-serif" font-weight="500" font-size="20" letter-spacing="6" fill="#5F7468">TRAIN LIKE A PRO</text>
 </svg>

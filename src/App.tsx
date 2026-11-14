@@ -1,15 +1,33 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import LiveDrillStudio from './components/LiveDrillStudio';
 import PlannerHub from './components/PlannerHub';
 import GamificationHub from './components/GamificationHub';
 import NutritionHub from './components/NutritionHub';
 import ScoutingHub from './components/ScoutingHub';
-import { Zap, Calendar, Trophy, Apple, Shield, Activity } from 'lucide-react';
+import AuthPage from './components/AuthPage';
+import { Zap, Calendar, Trophy, Apple, Shield, LogOut } from 'lucide-react';
 
 export default function App() {
+  const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'studio' | 'planner' | 'gamification' | 'nutrition' | 'scouting'>('studio');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('touchline_user');
+    if (saved) {
+      try { setUser(JSON.parse(saved)); } catch (e) {}
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('touchline_user');
+    setUser(null);
+  };
+
+  if (!user) {
+    return <AuthPage onLogin={setUser} />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">
@@ -21,7 +39,7 @@ export default function App() {
               ⚽
             </div>
             <div>
-              <span className="font-extrabold text-lg text-white tracking-tight">ULTIMATE TOUCHLINE</span>
+              <span className="font-extrabold text-lg text-white tracking-tight">TOUCHLINE</span>
               <span className="text-xs text-emerald-400 block font-semibold">AI PRO FOOTBALL ACADEMY</span>
             </div>
           </div>
@@ -58,6 +76,17 @@ export default function App() {
               <Shield size={14} /> Pro Card
             </button>
           </nav>
+
+          <div className="flex items-center gap-4">
+            <span className="text-xs font-bold text-slate-300 hidden sm:inline">Hi, {user.name}</span>
+            <button
+              onClick={handleLogout}
+              className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition"
+              title="Sign Out"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -72,7 +101,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
-        Ultimate Touchline • AI Pro Football Academy & Drill Engine • Built for Elite Players
+        Touchline • AI Pro Football Academy & Drill Engine • Built for Elite Players
       </footer>
     </div>
   );
