@@ -2,31 +2,68 @@
 
 import React, { useState, useEffect } from 'react';
 import LiveDrillStudio from './components/LiveDrillStudio';
+import LiveCameraStudio from './components/LiveCameraStudio';
 import PlannerHub from './components/PlannerHub';
 import GamificationHub from './components/GamificationHub';
 import NutritionHub from './components/NutritionHub';
 import ScoutingHub from './components/ScoutingHub';
-import AuthPage from './components/AuthPage';
-import { Zap, Calendar, Trophy, Apple, Shield, LogOut } from 'lucide-react';
+import OnboardingModal from './components/OnboardingModal';
+import { db, UserProfile } from './lib/db';
+import { Zap, Calendar, Trophy, Apple, Shield, Camera, LogOut, Activity } from 'lucide-react';
 
 export default function App() {
-  const [user, setUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'studio' | 'planner' | 'gamification' | 'nutrition' | 'scouting'>('studio');
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'studio' | 'camera' | 'planner' | 'gamification' | 'nutrition' | 'scouting'>('studio');
 
   useEffect(() => {
-    const saved = localStorage.getItem('touchline_user');
-    if (saved) {
-      try { setUser(JSON.parse(saved)); } catch (e) {}
+    async function checkUser() {
+      const profiles = await db.profile.toArray();
+      if (profiles.length > 0) {
+        setUser(profiles[0]);
+      }
+      setLoading(false);
     }
+    checkUser();
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('touchline_user');
+  const handleResetProfile = async () => {
+    await db.profile.clear();
     setUser(null);
   };
 
+  const handleCameraSessionComplete = async (reps: number, score: number) => {
+    if (!user) return;
+    const earnedXp = reps * 10 + Math.round(score / 2);
+    const newXp = user.xp + earnedXp;
+    const newLevel = Math.floor(newXp / 1000) + 1;
+
+    const updated = { ...user, xp: newXp, levelNum: newLevel };
+    await db.profile.put(updated);
+    setUser(updated);
+
+    await db.trainingLogs.add({
+      drillTitle: 'Live Camera Push-Up & Rep Session',
+      category: 'Football Strength',
+      durationSeconds: 120,
+      repsCompleted: reps,
+      formScore: score,
+      date: new Date(),
+    });
+
+    setActiveTab('studio');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-emerald-400 font-bold">
+        Loading Touchline Academy...
+      </div>
+    );
+  }
+
   if (!user) {
-    return <AuthPage onLogin={setUser} />;
+    return <OnboardingModal onComplete={setUser} />;
   }
 
   return (
@@ -47,42 +84,51 @@ export default function App() {
           <nav className="hidden md:flex items-center gap-1 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
             <button
               onClick={() => setActiveTab('studio')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${activeTab === 'studio' ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:text-white'}`}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${activeTab === 'studio' ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:text-white'}`}
             >
-              <Zap size={14} /> Drill Studio
+              <Zap size={14} /> Drills
+            </button>
+            <button
+              onClick={() => setActiveTab('camera')}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${activeTab === 'camera' ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:text-white'}`}
+            >
+              <Camera size={14} /> Train Live 🔴
             </button>
             <button
               onClick={() => setActiveTab('planner')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${activeTab === 'planner' ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:text-white'}`}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${activeTab === 'planner' ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:text-white'}`}
             >
-              <Calendar size={14} /> Weekly Planner
+              <Calendar size={14} /> Planner
             </button>
             <button
               onClick={() => setActiveTab('gamification')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${activeTab === 'gamification' ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:text-white'}`}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${activeTab === 'gamification' ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:text-white'}`}
             >
-              <Trophy size={14} /> Trophy Room
+              <Trophy size={14} /> Lvl {user.levelNum} ({user.xp} XP)
             </button>
             <button
               onClick={() => setActiveTab('nutrition')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${activeTab === 'nutrition' ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:text-white'}`}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${activeTab === 'nutrition' ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:text-white'}`}
             >
               <Apple size={14} /> Nutrition
             </button>
             <button
               onClick={() => setActiveTab('scouting')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${activeTab === 'scouting' ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:text-white'}`}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${activeTab === 'scouting' ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:text-white'}`}
             >
               <Shield size={14} /> Pro Card
             </button>
           </nav>
 
           <div className="flex items-center gap-4">
-            <span className="text-xs font-bold text-slate-300 hidden sm:inline">Hi, {user.name}</span>
+            <div className="text-right hidden sm:block">
+              <span className="text-xs font-bold text-white block">{user.name}</span>
+              <span className="text-[10px] text-emerald-400">{user.position} • {user.level}</span>
+            </div>
             <button
-              onClick={handleLogout}
+              onClick={handleResetProfile}
               className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition"
-              title="Sign Out"
+              title="Reset Profile"
             >
               <LogOut size={16} />
             </button>
@@ -93,6 +139,7 @@ export default function App() {
       {/* Main Content */}
       <main className="flex-1 py-8">
         {activeTab === 'studio' && <LiveDrillStudio />}
+        {activeTab === 'camera' && <LiveCameraStudio onSessionComplete={handleCameraSessionComplete} />}
         {activeTab === 'planner' && <PlannerHub />}
         {activeTab === 'gamification' && <GamificationHub />}
         {activeTab === 'nutrition' && <NutritionHub />}
@@ -101,7 +148,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
-        Touchline • AI Pro Football Academy & Drill Engine • Built for Elite Players
+        Touchline • AI Pro Football Academy & Live Camera Pose Tracker • Built for Elite Players
       </footer>
     </div>
   );
