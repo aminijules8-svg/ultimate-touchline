@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { Shield, Sparkles, TrendingUp, Zap, Award, CheckCircle2 } from 'lucide-react';
 

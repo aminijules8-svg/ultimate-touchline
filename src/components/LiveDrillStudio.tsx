@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Shield, Zap, Flame, Trophy, Award, ArrowRight, CheckCircle2, ChevronRight, Activity, Heart, Clock, Footprints } from 'lucide-react';
 import { generateDrill, generateSessionWorkout, Drill } from '../engine/drillGenerator';

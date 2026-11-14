@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import LiveDrillStudio from './components/LiveDrillStudio';
 import PlannerHub from './components/PlannerHub';

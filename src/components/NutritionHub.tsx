@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { Apple, Flame, Dumbbell, Shield, Zap, TrendingUp, RefreshCw, CheckCircle2 } from 'lucide-react';
 

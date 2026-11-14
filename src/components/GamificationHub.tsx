@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { Trophy, Award, Star, Zap, Flame, Shield, Target } from 'lucide-react';
 

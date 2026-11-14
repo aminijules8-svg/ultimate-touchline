@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { Dumbbell, Plus, Trash2, Calendar, CheckCircle2, TrendingUp, Shield, Zap } from 'lucide-react';
 
