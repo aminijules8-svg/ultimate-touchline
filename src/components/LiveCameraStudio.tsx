@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Camera, Square, AlertCircle, ShieldCheck, Activity, Flame } from 'lucide-react';
+import { Camera, Square, AlertCircle, Activity, Trophy, Flame } from 'lucide-react';
 
 export default function LiveCameraStudio({ onSessionComplete }: { onSessionComplete: (reps: number, score: number) => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isActive, setIsActive] = useState(false);
+  const [targetReps, setTargetReps] = useState(20); // Dynamic target based on workout plan
   const [repCount, setRepCount] = useState(0);
-  const [formScore, setFormScore] = useState(0);
   const [motionDetected, setMotionDetected] = useState(false);
   const [feedback, setFeedback] = useState('Position yourself in frame. Waiting for motion...');
   const [exerciseMode, setExerciseMode] = useState<'pushups' | 'squats' | 'plank'>('pushups');
@@ -18,7 +18,9 @@ export default function LiveCameraStudio({ onSessionComplete }: { onSessionCompl
   const animFrameRef = useRef<number | null>(null);
   const lastFrameDataRef = useRef<Uint8ClampedArray | null>(null);
 
-  // Stop all camera tracks immediately
+  // Real-time calculated form score: percentage of reps executed with proper motion cadence vs target
+  const rawFormPercentage = targetReps > 0 ? Math.min(100, Math.round((repCount / targetReps) * 100)) : 0;
+
   const stopCameraStreams = () => {
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach(track => {
@@ -58,10 +60,9 @@ export default function LiveCameraStudio({ onSessionComplete }: { onSessionCompl
       }
       setIsActive(true);
       setRepCount(0);
-      setFormScore(0);
       startMotionAnalysis();
     } catch (err: any) {
-      setCameraError('Camera access denied or unavailable. Please enable camera permissions in your browser settings.');
+      setCameraError('Camera access denied or unavailable. Please enable camera permissions.');
     }
   };
 
@@ -69,16 +70,15 @@ export default function LiveCameraStudio({ onSessionComplete }: { onSessionCompl
     stopCameraStreams();
     setIsActive(false);
     setRepCount(0);
-    setFormScore(0);
   };
 
   const finishSession = () => {
     stopCameraStreams();
     setIsActive(false);
-    onSessionComplete(repCount, formScore > 0 ? formScore : 75);
+    onSessionComplete(repCount, rawFormPercentage);
   };
 
-  // Real pixel-diff motion detection & posture heuristic analysis
+  // Real pixel-diff motion detection & dynamic percentage calculation
   const startMotionAnalysis = () => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
@@ -104,9 +104,8 @@ export default function LiveCameraStudio({ onSessionComplete }: { onSessionCompl
         const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = frame.data;
 
-        // Compute pixel difference for motion sensing
         let diffSum = 0;
-        const step = 20; // sample pixels for performance
+        const step = 20;
         if (lastFrameDataRef.current && lastFrameDataRef.current.length === data.length) {
           const prev = lastFrameDataRef.current;
           for (let i = 0; i < data.length; i += step * 4) {
@@ -118,31 +117,26 @@ export default function LiveCameraStudio({ onSessionComplete }: { onSessionCompl
         }
         lastFrameDataRef.current = new Uint8ClampedArray(data);
 
-        const motionDetectedNow = diffSum > 150000; // threshold for active workout movement
+        const motionDetectedNow = diffSum > 140000;
         setMotionDetected(motionDetectedNow);
 
         if (!motionDetectedNow) {
-          setFeedback('⚠️ No movement detected! Stand in front of camera and perform reps to score points.');
-          setFormScore(0);
+          setFeedback('⚠️ No movement detected! Perform active reps in front of camera to increment score.');
         } else {
-          setFormScore(91);
           const now = Date.now();
-          if (now - lastRepTime > 2500) { // 2.5 seconds per rep cadence
+          if (now - lastRepTime > 2200) { // realistic rep cadence interval
             localRepCount += 1;
             setRepCount(localRepCount);
-            setFeedback(`✅ Motion verified! Rep ${localRepCount} recorded. Perfect form.`);
+            setFeedback(`✅ Motion verified! Rep ${localRepCount} recorded. Keep going!`);
             lastRepTime = now;
           }
         }
 
-        // Draw skeleton / posture tracking overlay box
         ctx.strokeStyle = motionDetectedNow ? '#10B981' : '#F59E0B';
         ctx.lineWidth = 4;
         ctx.strokeRect(canvas.width * 0.25, canvas.height * 0.15, canvas.width * 0.5, canvas.height * 0.7);
 
-      } catch (e) {
-        // Handle cross-origin or frame read errors safely
-      }
+      } catch (e) {}
 
       animFrameRef.current = requestAnimationFrame(analyze);
     };
@@ -155,21 +149,24 @@ export default function LiveCameraStudio({ onSessionComplete }: { onSessionCompl
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-emerald-950 via-slate-900 to-slate-950 p-6 rounded-3xl border border-emerald-500/30">
         <div>
           <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-bold uppercase tracking-wider border border-emerald-500/30">
-            Pillar 1B • Live Motion Sensor & Pose AI
+            Pillar 1B • Real-Time Motion Sensor & Dynamic Percentage
           </span>
           <h1 className="text-3xl font-extrabold text-white mt-1">Strict Motion-Verified Trainer</h1>
-          <p className="text-slate-400 text-sm">App only awards score and XP when camera detects active movement in frame. Blank screens yield 0 score.</p>
+          <p className="text-slate-400 text-sm">Scores and completion percentages calculate strictly from your actual executed work vs target (e.g. {repCount}/{targetReps} reps = {rawFormPercentage}%).</p>
         </div>
 
         <div className="flex items-center gap-3">
           <select
             value={exerciseMode}
-            onChange={e => setExerciseMode(e.target.value as any)}
+            onChange={e => {
+              setExerciseMode(e.target.value as any);
+              setTargetReps(e.target.value === 'plank' ? 60 : 20);
+            }}
             className="bg-slate-900 border border-slate-700 text-white rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-emerald-500"
           >
-            <option value="pushups">Push-Up Motion Analysis</option>
-            <option value="squats">Squat Depth Sensor</option>
-            <option value="plank">Plank Stability Lock</option>
+            <option value="pushups">Push-Ups (Target: 20 reps)</option>
+            <option value="squats">Squats (Target: 20 reps)</option>
+            <option value="plank">Plank (Target: 60s)</option>
           </select>
 
           {!isActive ? (
@@ -205,7 +202,7 @@ export default function LiveCameraStudio({ onSessionComplete }: { onSessionCompl
         </div>
       )}
 
-      {/* Camera Viewport & Motion HUD */}
+      {/* Camera Viewport & Dynamic HUD */}
       <div className="relative aspect-video max-h-[600px] w-full bg-slate-950 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center">
         <video
           ref={videoRef}
@@ -222,7 +219,7 @@ export default function LiveCameraStudio({ onSessionComplete }: { onSessionCompl
             </div>
             <h2 className="text-2xl font-bold text-white">Motion Sensor Camera Ready</h2>
             <p className="text-slate-400 text-sm max-w-md">
-              The camera turns on only when you press Start and turns off instantly when you finish or quit. Motion sensors verify your reps before awarding score.
+              Camera turns on only when active. Your completion percentage and XP are calculated purely from your real work (e.g. {repCount} of {targetReps} reps completed).
             </p>
             <button
               onClick={startCamera}
@@ -235,15 +232,15 @@ export default function LiveCameraStudio({ onSessionComplete }: { onSessionCompl
 
         {isActive && (
           <>
-            {/* HUD Overlays */}
+            {/* Dynamic HUD Overlays */}
             <div className="absolute top-6 left-6 bg-slate-900/90 backdrop-blur border border-slate-800 p-4 rounded-2xl flex items-center gap-6 shadow-2xl">
               <div>
-                <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Verified Reps</div>
-                <div className="text-4xl font-black text-emerald-400">{repCount}</div>
+                <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Real Reps / Target</div>
+                <div className="text-4xl font-black text-emerald-400">{repCount} <span className="text-lg text-slate-500">/ {targetReps}</span></div>
               </div>
               <div className="border-l border-slate-800 pl-6">
-                <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Motion Score</div>
-                <div className="text-4xl font-black text-white">{formScore}%</div>
+                <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Real Work %</div>
+                <div className="text-4xl font-black text-white">{rawFormPercentage}%</div>
               </div>
             </div>
 
@@ -260,7 +257,7 @@ export default function LiveCameraStudio({ onSessionComplete }: { onSessionCompl
                 <span className="font-bold text-white text-sm">{feedback}</span>
               </div>
               <span className="text-xs text-slate-400 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
-                100% On-Device Sensor Analysis
+                100% Real-Time Work Calculation
               </span>
             </div>
           </>
